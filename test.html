@@ -13,79 +13,59 @@
 <body>
 
 <script type="text/javascript">
-
 var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update });
 var spriteArray = [];
-
-
+var reduceCountKeyPressLeftBy = 2;
+var reduceMeterEvery = 2000;    //milliseconds
+    
 function preload() {
-
     game.load.image('sky', 'assets/sky.png');
     game.load.image('ground', 'assets/platform.png');
     game.load.image('star', 'assets/star.png');
     game.load.image('pikachu', 'assets/Pikachu.png');
-    game.load.image('electricMachine', 'assets/ElectricMachine.png');
+    game.load.image('electricMachineBlueLeft', 'assets/ElectricMachineBlueLeft.png');
+    game.load.image('electricMachineGreenRight', 'assets/ElectricMachineGreenRight.png');
     game.load.image('vu', 'assets/vu.png');
-
-}
-
-function fillMeter() 
-{
-    var numSprites = Math.floor(countKeyPressLeft/5);
-    
-    for(var i=0;i<spriteArray.length;i++){
-        spriteArray[i].kill();
-    }
-    if(countKeyPressLeft==50){
-        text.setText('You Won!');
-    }else{
-        numSprites = Math.floor(countKeyPressLeft/5);
-        for(i=0;i<numSprites;i++){
-            var meterPictureSprite = game.add.sprite(fillMeterPic.x + ((i)*32), fillMeterPic.y, 'pikachu');
-            spriteArray.push(meterPictureSprite);
-        }
-    }
 }
 
 var player, platforms, cursors, text;
-var countKeyPressLeft = 0;
+var countKeyPresses = 0;
 var textCounter = 0;
 var leftDownFlag = false;
+var rightDownFlag = false;
 var timer;
 var fillMeterPic;
-
+    
+var electricMachineBlueLeft;
+var electricMachineGreenRight;
+var electricMachineTimer;
+    
 function create() {
-
     //  We're going to be using physics, so enable the Arcade Physics system
     game.physics.startSystem(Phaser.Physics.ARCADE);
-
     //  A simple background for our game
     game.add.sprite(0, 0, 'sky');
     
     //MYCODE
-    game.add.sprite(300, 400, 'electricMachine');
-
+    electricMachineBlueLeft = game.add.sprite(300, 400, 'electricMachineBlueLeft');
+    electricMachineBlueLeft.visible = true;
+    electricMachineGreenRight = game.add.sprite(300, 400, 'electricMachineGreenRight');
+    electricMachineGreenRight.visible = false;
+    
     //  The platforms group contains the ground and the 2 ledges we can jump on
     platforms = game.add.group();
-
     //  We will enable physics for any object that is created in this group
     platforms.enableBody = true;
-
     // Here we create the ground.
     var ground = platforms.create(0, game.world.height - 64, 'ground');
-
     //  Scale it to fit the width of the game (the original sprite is 400x32 in size)
     ground.scale.setTo(2, 2);
-
     //  This stops it from falling away when you jump on it
     ground.body.immovable = true;
-
     // The player and its settings
     player = game.add.sprite(32, game.world.height - 150, 'pikachu');
-
     //  We need to enable physics on the player
     game.physics.arcade.enable(player);
-
     //  Player physics properties. Give the little guy a slight bounce.
     player.body.bounce.y = 0;
     player.body.gravity.y = 300;
@@ -102,26 +82,58 @@ function create() {
     
     //  Create our Timer
     timer = game.time.create(false);
-
     //  Set a TimerEvent to occur after 2 seconds
-    timer.loop(2000, reduceMeter, this);
+    timer.loop(reduceMeterEvery, reduceMeter, this);
+    
+    //Set another TimerEvent to occur every random seconds
+    electricMachineTimer = timer.loop(game.rnd.integerInRange(1000, 5000), changeElectricMachine, this);
     
     //  Start the timer running - this is important!
     //  It won't start automatically, allowing you to hook it to button events and the like.
     timer.start();
 }
-
-function reduceMeter() {
-    countKeyPressLeft -= 2;
-    text.setText('Counter: ' + countKeyPressLeft);
-    fillMeter();
-}
+function fillMeter() 
+{
+    var numSprites = Math.floor(countKeyPresses/5);
     
-function update() {
-
-    //  Collide the player and platforms
-    game.physics.arcade.collide(player, platforms);
-
+    for(var i=0;i<spriteArray.length;i++){
+        spriteArray[i].kill();
+    }
+    if(countKeyPresses>=50){
+        text.setText('You Won!');
+    }else{
+        numSprites = Math.floor(countKeyPresses/5);
+        for(i=0;i<numSprites;i++){
+            var meterPictureSprite = game.add.sprite(fillMeterPic.x + ((i)*32), fillMeterPic.y, 'pikachu');
+            spriteArray.push(meterPictureSprite);
+        }
+    }
+}
+function reduceMeter() {
+    if(countKeyPresses > (0 + reduceCountKeyPressLeftBy))
+        {
+            countKeyPresses -= reduceCountKeyPressLeftBy;
+            text.setText('Counter: ' + countKeyPresses);
+            fillMeter();   
+        }
+}
+function changeElectricMachine()
+{
+    
+    if (electricMachineBlueLeft.visible == true)
+    {
+        electricMachineBlueLeft.visible = false;
+        electricMachineGreenRight.visible = true;
+    }
+    else
+    {
+        electricMachineBlueLeft.visible = true;
+        electricMachineGreenRight.visible = false;
+    }
+    electricMachineTimer.delay = game.rnd.integerInRange(1000, 5000);
+}
+function countKeyPressLeft()
+{
     if(cursors.left.isDown)
     {
         leftDownFlag = true;
@@ -129,16 +141,47 @@ function update() {
     else{
         if(leftDownFlag){
             leftDownFlag = false;
-            countKeyPressLeft++;
+            countKeyPresses++;
         }
     }
     
     //MYCODE
-    text.setText('Counter: ' + countKeyPressLeft);
+    text.setText('Counter: ' + countKeyPresses);
+    
+    fillMeter();
+}
+function countKeyPressRight()
+{
+    if(cursors.right.isDown)
+        {
+            rightDownFlag = true;
+        }
+    else
+    {
+        if(rightDownFlag){
+            rightDownFlag = false;
+            countKeyPresses++;
+        }
+    }
+    //MYCODE
+    text.setText('Counter: ' + countKeyPresses);
     
     fillMeter();
 }
 
+function update() {
+    //  Collide the player and platforms
+    game.physics.arcade.collide(player, platforms);
+    //Check what electricMachine is up
+    if(electricMachineBlueLeft.visible == true)
+    {
+        countKeyPressLeft();
+    }
+    else
+    {
+        countKeyPressRight();
+    }
+}
 </script>
 
 </body>
