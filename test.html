@@ -27,7 +27,6 @@ function preload() {
     game.load.image('electricMachineGreenRight', 'assets/ElectricMachineGreenRight.png');
     game.load.image('vu', 'assets/vu.png');
 }
-
 var player, platforms, cursors, text;
 var countKeyPresses = 0;
 var textCounter = 0;
@@ -117,7 +116,7 @@ function reduceMeter() {
             fillMeter();   
         }
 }
-function changeElectricMachine()l
+function changeElectricMachine()
 {
     
     if (electricMachineBlueLeft.visible == true)
@@ -168,7 +167,6 @@ function countKeyPressRight()
     
     fillMeter();
 }
-
 function update() {
     //  Collide the player and platforms
     game.physics.arcade.collide(player, platforms);
